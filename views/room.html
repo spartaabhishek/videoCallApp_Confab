@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+    body{
+    background-color: black;
+    }
+    #video-grid{
+    display: flexbox;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+    flex-wrap: wrap;
+    background-color: black;
+    }
+    video{
+      width:400px;
+      height:400px;
+    }
+    </style>
+  </head>
+  <body>
+    <div id="video-grid" class="video">
+      <button id="connect">Connect</button>
+      <button id="mail">mail</button>
+      <video id="local-video" autoplay playsinline width="400px" height="400px"></video>
+      <video id="remote-video" autoplay playsinline></video>
+    </div>
+    <script src="views/script.js"></script>
+    <script>
+       const mailbtn = document.getElementById("mail")
+       mailbtn.addEventListener('click',()=>{
+        window.open(`http://localhost:80/VideoCallMail/sendMail.php?url=${window.location.href}`, '_blank');
+       }) 
+    </script>
+    
+  </body>
+</html>
