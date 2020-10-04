@@ -25,7 +25,7 @@
 
 var url = location.origin.replace(/^http/, 'ws')
 const signaling = new WebSocket(url);
-const constraints = {  video: true };
+const constraints = {  video: true, audio: true};
 var dataConstraint = null;
 // var configuration = { 
 //   "iceServers": [{ "url": "stun:stun.stunprotocol.org" }] 
