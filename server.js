@@ -53,4 +53,8 @@ function broadcast(conn,message) {
     }
   );
 }
-server.listen(8080);
+let port = process.env.PORT;
+if (port == null || port == "") {
+  port = 8080;
+}
+server.listen(port);
