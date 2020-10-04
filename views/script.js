@@ -23,7 +23,8 @@
 //   .then(gotLocalMediaStream)
 //   .catch(handleLocalMediaStreamError);
 
-const signaling = new WebSocket("ws://localhost:8080");
+var url = location.origin.replace(/^http/, 'ws')
+const signaling = new WebSocket(url);
 const constraints = {  video: true };
 var dataConstraint = null;
 // var configuration = { 
