@@ -90,7 +90,9 @@ async function start() {
    gainNode.connect(audioContext.destination);
     pc.addStream(stream); 
     selfView = document.getElementById("local-video");
+    selfView.muted=true
     selfView.srcObject = stream;
+    
   } catch (err) {
     console.error(err);
   }
