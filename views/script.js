@@ -52,8 +52,11 @@ gainNode.gain.value = 0.5;
 
 var url = location.origin.replace(/^http/, 'ws')
 const signaling = new WebSocket(url);
-const constraints = {  video: true, audio: true };
+const constraints = {video: true,audio: true};
 var dataConstraint = null;
+var userId=""
+var roomId=window.location.href.substring(window.location.href.indexOf(location.origin)+window.location.origin.length+1)
+var roomUsers=[]
 // var configuration = { 
 //   "iceServers": [{ "url": "stun:stun.stunprotocol.org" }] 
 // };
@@ -69,69 +72,118 @@ const config = {
   ]
 }
 // const config = {'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]}
-const pc = new RTCPeerConnection(config);
-start();
-sendChannel = pc.createDataChannel("sendDataChannel", dataConstraint);
-
-function send(message) { 
-  signaling.send(JSON.stringify(message)); 
+//const pc = new RTCPeerConnection(config);
+//sendChannel = pc.createDataChannel("sendDataChannel", dataConstraint);
+const peers ={}
+async function send(message) { 
+  console.log(message)
+  await signaling.send(JSON.stringify(message)); 
 };
 
-
-async function start() {
+//local video element
+async function start(pc) {
   try {
     // get local stream, show it in self-view and add it to be sent
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
     const mediaStreamSource =
     audioContext.createMediaStreamSource(stream);
     mediaStreamSource.connect(filterNode);
-   filterNode.connect(gainNode);
-  // connect the gain node to the destination (i.e. play the sound)
-   gainNode.connect(audioContext.destination);
-    pc.addStream(stream); 
-    selfView = document.getElementById("local-video");
-    selfView.muted=true
-    selfView.srcObject = stream;
+    filterNode.connect(gainNode);
+    // connect the gain node to the destination (i.e. play the sound)
+    gainNode.connect(audioContext.destination);
+    if(pc!=""){
+      stream.getTracks().forEach(track => {
+          pc.addTrack(track, stream);
+      })
+  }
+      let selfView = document.getElementById("local-video");
+      console.log("set local video")
+      selfView.srcObject = stream;
+      selfView.muted=true
+      document.getElementById("video-grid").appendChild(selfView)
+    
     
   } catch (err) {
     console.error(err);
   }
 }
 
-pc.onaddstream = (track) => {
+
+//pc.onaddstream = (track) => {
   // don't set srcObject again if it is already set.
-  
+
+  function handleTrack(pc){
+  pc.addEventListener('track', async (event) => {
+  var remoteStream=new MediaStream()
+  remoteStream.addTrack(event.track, remoteStream);
+
   var newVideo=document.createElement("video")
   newVideo.setAttribute("autoplay","true")
   newVideo.setAttribute("playinline","true")
-  newVideo.srcObject = track.stream;
+  newVideo.className="remoteVideoConnected"
+  newVideo.srcObject = remoteStream
   document.getElementById("video-grid").appendChild(newVideo)
+})}
+
+
+signaling.onopen =async (data) => {
+  console.log("connected...");
+  console.log(data);
+
+  await send({type:"enterlobby",roomId})
+  await send({type:"users",roomId})
+
 };
 
-pc.onicecandidate = async ({ candidate }) =>{
-  if(candidate!=null)  await send({ type:"candidate",candidate });
+function handleCandidate(pc){
+  pc.onicecandidate = async ({ candidate }) =>{
+    if(candidate!=null) await send({ type:"candidate",candidate,roomId,userId });
 }
+}
+
+// pc.onnegotiationneeded = async () => {
+//   try {
+
+//     await pc.setLocalDescription(await pc.createOffer());
+//     // send the offer to the other peer
+//     send({type:'offer',offer: pc.localDescription});
+//   } catch (err) {
+//     console.error(err);
+//   }
+// };
 
 // let the "negotiationneeded" event trigger offer generation
 let callBtn=document.getElementById("connect")
 callBtn.addEventListener("click", async () => {
-  try {
+  
     console.log("clicked")
-    await pc.setLocalDescription(await pc.createOffer());
-    // send the offer to the other peer
-    await send({ offer: pc.localDescription,type:'offer' });
-  } catch (err) {
-    console.error(err);
-  }
+    await send({type:"users",roomId})
+    console.log(roomUsers)
+    for(let i=0;i<roomUsers.length;i++){
+      if(roomUsers[i]!=userId){
+        handleOffer(roomUsers[i])
+    }
+  } 
 })
 
+async function handleOffer(i){
+  try{
+
+      var offer = await peers[i]["con"].createOffer()
+      if(peers[i]["con"].localDescription==null){
+        await peers[i]["con"].setLocalDescription(new RTCSessionDescription (offer))
+        console.log(`set local for ${i}`)
+      }
+      // send the offer to the other peer
+      await send({ offer: new RTCSessionDescription(offer),type:'offer',roomId, userA : i ,userB:userId});
+    }
+    catch (err) {
+      console.error(err);
+    }
+  }
 
 // isOpen(signaling);
 
-signaling.onopen = (data) => {
-  console.log("connected...");
-  console.log(data);
-};
 
 //var selfView = document.getElementById("local-video");
 // once remote track media arrives, show it in remote video element
@@ -142,10 +194,8 @@ signaling.onopen = (data) => {
 
 
 
-
 signaling.addEventListener('message',async (msg) => {
   var data = JSON.parse(msg.data);
-  console.log(msg.data)
   try {
 
     // if(users){
@@ -161,37 +211,62 @@ signaling.addEventListener('message',async (msg) => {
     // }
 
       // if we get an offer, we need to reply with an answer
-      if (data.type === "offer") {
-        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+      if(data.type==="creds"){
+         userId=data.userId
+      }
+
+      else if(data.type==="users"){
+        roomUsers=[...data.users]
+        console.log(roomUsers)
+        for(let i=0;i<roomUsers.length;i++){
+           let user=roomUsers[i]
+          if(!peers.hasOwnProperty(user) && user!=userId){
+             peers[user]={}
+             peers[user].con = new RTCPeerConnection(config)
+             peers[user].track = "none"
+             await handleCandidate(peers[user]["con"])
+             await handleTrack(peers[user]["con"])
+             await start(peers[user]["con"])
+          }
+          else if(user==userId && roomUsers.length==1) await start("")
+        }
+        
+      }
+
+      else if(data.type === "offer") {
+
+        await peers[data.userB]["con"].setRemoteDescription(new RTCSessionDescription(data.offer));
         //const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        await pc.setLocalDescription(await pc.createAnswer());
-        await send({ answer: pc.localDescription,type:'answer' });
+        var answer = await peers[data.userB]["con"].createAnswer()
+        if(peers[data.userB]["con"].localDescription==null){
+          await peers[data.userB]["con"].setLocalDescription(new RTCSessionDescription(answer))
+        }
+        console.log(data)
+        await send({ answer: new RTCSessionDescription(answer),type:'answer',roomId,userA:data.userB,userB:userId});
         console.log("offer signal")
         console.log(data.offer)
         //sendChannel.send(selfView.value);
       } else if (data.type === "answer") {
         console.log("answer")
         
-        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        await peers[data.userB]["con"].setRemoteDescription(await new RTCSessionDescription(data.answer));
         console.log("answer signal")
         console.log(data.answer)
         
       } 
      else if (data.type==="candidate") {
-
-      if(pc.remoteDescription!=null && pc.localDescription!=null){
-        pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        peers[data.userId]["con"].addIceCandidate(new RTCIceCandidate(data.candidate));
         console.log("candidate signal")
         console.log(data.candidate)
+        
       }
-      
     }
-  }
   catch (err) {
     console.error(err);
   }
-
-})
+  }
+)
 
 
 // const localConnection = new RTCPeerConnection(servers);
@@ -216,3 +291,9 @@ signaling.addEventListener('message',async (msg) => {
 //   var data = document.querySelector("textarea#send").value;
 //   sendChannel.send(data);
 // };
+
+
+
+
+
+
