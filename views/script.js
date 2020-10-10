@@ -52,7 +52,15 @@ gainNode.gain.value = 0.5;
 
 var url = location.origin.replace(/^http/, 'ws')
 const signaling = new WebSocket(url);
-const constraints = {video: true,audio: true};
+const constraints = {video: {
+  width: { min: 640, max: 1024 },
+  height: { min: 480, max: 768 },
+  aspectRatio: { ideal: 1.7777777778 }
+},
+audio: {
+  sampleSize: 16,
+  channelCount: 2
+}};
 var dataConstraint = null;
 var userId=""
 var roomId=window.location.href.substring(window.location.href.indexOf(location.origin)+window.location.origin.length+1)
@@ -123,6 +131,7 @@ async function start(pc) {
   newVideo.className="remoteVideoConnected"
   newVideo.srcObject = remoteStream
   document.getElementById("video-grid").appendChild(newVideo)
+  return newVideo
 })}
 
 
@@ -226,7 +235,7 @@ signaling.addEventListener('message',async (msg) => {
              peers[user].con = new RTCPeerConnection(config)
              peers[user].track = "none"
              await handleCandidate(peers[user]["con"])
-             await handleTrack(peers[user]["con"])
+             peers[user]["stream"]=await handleTrack(peers[user]["con"])
              await start(peers[user]["con"])
           }
           else if(user==userId && roomUsers.length==1) await start("")
@@ -260,6 +269,16 @@ signaling.addEventListener('message',async (msg) => {
         console.log("candidate signal")
         console.log(data.candidate)
         
+      }
+
+      else if (data.type === 'disconnect'){
+        if(peers.hasOwnProperty(data.userId)){
+          if(peers[data.userId].hasOwnProperty("stream")){
+            document.getElementById('video-grid').removeChild(peers[data.userId]["stream"])
+          }
+          peers[data.userId]["con"].close()
+          delete peers[data.userId]
+        }
       }
     }
   catch (err) {

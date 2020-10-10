@@ -10,7 +10,6 @@ app.use(express.static(__dirname));
 
 
 var rooms = {} 
-var clients = {}
 app.get("/:roomId", (req, res) => {
   res.sendFile("/views/room.html", { 
     root: __dirname,
@@ -22,6 +21,24 @@ app.get('/mail',(req,res)=>{
   [url] = req.query
   res.render("email",{url})
 })
+
+function checkAllUserConnection(roomId){
+  let clients = Object.keys(rooms[roomId])
+  clients.forEach(user=>{
+    if(rooms[roomId][user].readyState !== WebSocket.OPEN){
+      delete rooms[roomId][user]
+    }
+  }
+  )
+}
+
+function checkUserConnection(roomId,user){
+  if(rooms[roomId][user].readyState === WebSocket.OPEN){
+    return true
+  }
+  delete rooms[roomId][user]
+  return false
+}
 
 function send(con,message) { 
   con.send(JSON.stringify(message)); 
@@ -48,33 +65,42 @@ ws.on("connection", function connection(conn) {
       var connA=rooms[roomId][userId]
       send(connA,{type:"creds",userId})
     }
+
     else if(data.type=="users"){
       console.log("users:")
       var {roomId}=data
       var users=[]
-      if(rooms.hasOwnProperty(roomId))
-      {
+      if(rooms.hasOwnProperty(roomId)){
+        checkAllUserConnection(roomId)
         users=Object.keys(rooms[roomId])
-      } 
+      }
       broadcast("",{type:"users",users,roomId})
     }
 
     else if (data.type=='offer') {
       console.log("received: offer")
       var {roomId,userA,userB}=data
-      console.log(rooms)   
-      var connA = rooms[roomId][userA]
-
-      send(connA,{type:"offer",userB,offer:data.offer});
+      console.log(rooms)
+      if(checkUserConnection(roomId,userA)){   
+          var connA = rooms[roomId][userA]
+          send(connA,{type:"offer",userB,offer:data.offer});
+      }
+      else{
+        send(conn,{type:"disconnect",userId:userA,roomId})
+      }
     }
 
     else if (data.type=='answer') {
       console.log("received: answer")
      
-      var {roomId,userA,userB}=data   
-      var connA = rooms[roomId][userA]
-
-      send(connA,{type:"answer",userA,answer:data.answer,userB});
+      var {roomId,userA,userB}=data
+      if(checkUserConnection(roomId,userA)){      
+        var connA = rooms[roomId][userA]
+        send(connA,{type:"answer",userA,answer:data.answer,userB});
+     }
+     else{
+      send(conn,{type:"disconnect",userId:userA,roomId})
+     }
     }
     
     else if(data.type='candidate'){
