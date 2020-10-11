@@ -10,8 +10,32 @@ app.use(express.static(__dirname));
 
 
 var rooms = {} 
-app.get("/:roomId", (req, res) => {
-  res.sendFile("/views/room.html", { 
+
+app.get("/",checkNotAuth,(req,res)=>{
+  res.sendFile("/views/login.html")
+})
+
+app.get("/dashboard",checkAuth,(req, res) => {
+  res.sendFile("/views/dash.html", { 
+    root: __dirname,
+  });
+});
+
+app.get('/generateRoomId',checkAuth,(req,res)=>{
+    const rid = generateURL()
+    res.redirect(`/${rid}`)
+})
+
+app.get('/checkRoomId',checkAuth,(req,res)=>{
+  const {roomId} = req.query
+  if(rooms.hasOwnProperty(roomId)){
+      res.redirect(`/${roomId}`)
+  }
+  res.redirect(`/dashboard`)
+})
+
+app.get("/:roomId",checkAuth,(req, res) => {
+  res.sendFile("/views/room-lobby.html", { 
     root: __dirname,
   });
 });
@@ -21,6 +45,39 @@ app.get('/mail',(req,res)=>{
   [url] = req.query
   res.render("email",{url})
 })
+
+function checkAuth(req,res,next){
+  var authenticate = true
+
+  if(!authenticate){
+    res.redirect('/login')
+  }
+  next()
+}
+
+function checkNotAuth(req,res,next){
+  var authenticate = true
+
+  if(!authenticate){
+    next()
+  }
+  res.redirect('/dashboard')
+}
+
+function generateURL(){
+  let rid=""
+  for(let i=0;i<2;i++){
+    for(let j=0;j<2;j++){
+      let rand = Math.floor(Math.random() * 26)+97;
+      rid = rid + String.fromCharCode(rand);
+      rand = Math.floor(Math.random() * 10)+48;
+      rid = rid + rand
+    }
+    rid = rid + '-'
+  }
+  if(rooms.hasOwnProperty(rid)) generateURL()
+  return rid
+}
 
 function checkAllUserConnection(roomId){
   let clients = Object.keys(rooms[roomId])
@@ -110,6 +167,19 @@ ws.on("connection", function connection(conn) {
     }
   });
 });
+
+setInterval(()=>{
+  var r = Object.keys(rooms)
+  for(const room of r){
+      var u = Object.keys(rooms[room])
+      for(const uid of u){
+        if(rooms[room][uid].readyState !== WebSocket.OPEN){
+          delete rooms[room][uid]
+          broadcast("",{type:'disconnect',roomId:room,userId:uid})
+        }
+      }
+  }
+},2000)
 
 function broadcast(userId,message) {
   var {roomId}=message

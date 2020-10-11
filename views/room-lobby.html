@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined" rel="stylesheet">
+
+    <style>
+      body 
+      {
+        margin: 0;
+        font-family: 'Open Sans', sans-serif;
+        background: #19202c;
+      }
+
+      /*grid*/
+      .video_grid
+      {
+        position: absolute;
+        top: 90px;
+        width: 100%;
+        height: 585px;
+        background-color: black;
+        display: flexbox;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .local_cam
+      {
+        position: fixed;
+        width: 200px;
+        max-height: 115px;
+        right: 25px;
+        bottom: 25px;
+        background: rgb(29, 29, 29);
+      }
+
+      /*fixed*/
+      video
+      {
+        width: 400px;
+        height: 400px;
+        transform: rotateY(180deg);
+      }
+
+      /* action bar css */
+      .action_bar
+      {
+        position: fixed;
+        left: 50%;
+        bottom: 15px;
+        transform: translate(-50%, -50%);
+        margin: 0 auto;
+        width: 365px;
+        border-radius: 10px;
+        box-shadow:  5px 5px 10px #141a23, -5px -5px 10px #1e2635;
+      }
+
+      .action_bar button
+      {
+        outline: none;
+        border: none;
+        line-height: 0px;
+        padding: 20px 25px;
+        margin-right: -5px;
+        cursor: pointer;
+        color: white;
+        background: #eeeeee;
+      }
+
+      /* header css */
+      .header
+      {
+          width: 100%;
+          height: 100px;
+          position: absolute;
+          left: 0;
+          top: 0;
+          color: white;
+      }
+
+      .header h1
+      {
+          padding: 0px 20px;
+          font-weight: bold;
+          float: left;
+      }
+      
+      .header ul
+      {
+          padding-right: 10px;
+      }
+
+      .header li
+      {
+          list-style-type: none;
+          float: right;
+          font-size: 25px;
+          padding: 10px;
+      }
+
+      .profile_img
+      {
+          width: 55px;
+          border-radius: 50%;
+          margin-top: -15px;
+          border: 5px solid #1b222f;
+          box-shadow:  5px 5px 15px #131821, -5px -5px 15px #1f2837;
+          cursor: pointer;
+      }
+
+      .profile_menu
+      {
+          width: 165px;
+          height: 125px;
+          position: absolute;
+          right: 25px;
+          top: 100px;
+          background: white;
+          border-radius: 10px;
+          color: black;
+      }
+
+      .arrow-up
+      {
+          width: 0; 
+          height: 0; 
+          border-left: 10px solid transparent;
+          border-right: 10px solid transparent;
+          border-bottom: 10px solid white;
+          position: absolute;
+          right: 15px;
+          top: -10px;
+      }
+
+      .profile_menu li
+      {
+          float: unset;
+          text-align: center;
+          padding: 5px;
+      }
+
+      .profile_menu ul
+      {
+          padding: unset;
+      }
+
+    </style>
+  </head>
+  <body>
+
+    <!-- this grid contsins all incoming videos -->
+    <div id="video-grid" class="video_grid">
+      <!-- fixed local video , -->
+      <video id="local-video" class="local_cam" autoplay playsinline></video>
+
+      <!-- remote video , u can define a class to add to the video element -->
+      <video id="remote-video" autoplay playsinline></video>
+    </div>
+
+    <div class="action_bar">
+      <button id="connect" style="border-radius: 10px 0px 0px 10px; background: linear-gradient(145deg, #03a6f5, #038cce);"><i class="material-icons-outlined">add_ic_call</i></button>
+      <button id="mail" style="background: linear-gradient(145deg, #00b8cf, #009bae);"><i class="material-icons-outlined">mail</i></button>
+      <button id="camera" style="color: black"><i class="material-icons-outlined">videocam</i></button>
+      <button id="mic" style="color: black"><i class="material-icons-outlined">mic</i></button>
+      <button id="disconnect" style="border-radius: 0px 10px 10px 0px; background: linear-gradient(145deg, #d42b2b, #b22424);"><i class="material-icons-outlined">call_end</i></button>
+    </div>
+
+    <div class="header">
+      <h1>LOGO</h1>
+      <ul>
+          <li onclick="profile_menu()"><img class="profile_img" src="https://pbs.twimg.com/profile_images/701426410863243264/phe5bian.png"></li>
+          <li>User</li>
+      </ul>
+      <div class="profile_menu" style="display: none;">
+          <div class="arrow-up"></div>
+          <ul>
+              <li>Profile</li>
+              <li>Sign Out</li>
+          </ul>
+      </div>
+    </div>
+    
+    
+    <script src="views/script.js"></script>
+    <script>
+       const mailbtn = document.getElementById("mail");
+       mailbtn.addEventListener('click',()=>{
+        window.open(`http://localhost:80/VideoCallMail/sendMail.php?url=${window.location.href}`, '_blank');
+       });
+
+       // profile menu toggle
+       function profile_menu()
+            {
+                var menu = document.getElementsByClassName("profile_menu");
+                if (menu[0].style.display === "none") {
+                    menu[0].style.display = "block";
+                } else {
+                    menu[0].style.display = "none";
+                }
+            } 
+    </script>
+    
+  </body>
+</html>

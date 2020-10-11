@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Signup</title>
+        
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined" rel="stylesheet">
+
+        <style>
+            body
+            {
+                font-family: 'Open Sans', sans-serif;
+                background: #19202c;
+            }
+
+            .watermark
+            {
+                color: #1e2635;
+                font-size: 20em;
+                transform: rotate(90deg);
+                user-select: none;
+                position: fixed;
+                margin: 50px 0px 0px -1em;
+            }
+
+            .container
+            {
+                width: 25em;
+                height: 32em;
+                border-radius: 20px;
+                background: linear-gradient(145deg, #1b222f, #171d28);;
+                box-shadow:  20px 20px 40px #141a23, -20px -20px 40px #1e2635;
+                position: relative;
+                display: flex;
+                margin: 0 auto;
+                margin-top: 150px;
+                justify-content: center;
+                color: #ffffff;
+            }
+
+            .active_button
+            {
+                height: 40px;
+                width: 21em;
+                position: absolute;
+                margin: 0 auto;
+                border: none;
+                border-radius: 10px;
+                background: linear-gradient(145deg, #1b222f, #171d28);
+                box-shadow:  5px 5px 10px #141a23, -5px -5px 10px #1e2635;
+                color: #37b8e9;
+                font-size: 15px;
+                font-weight: bold;
+                cursor: pointer;
+                text-align: center;
+                outline: none;
+            }
+
+            .sec_button
+            {
+                height: 40px;
+                width: 21em;
+                position: absolute;
+                margin: 0 auto;
+                border: none;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0);
+                border: 3px solid #1e2635;
+                color: #cccccc;
+                font-size: 15px;
+                font-weight: bold;
+                cursor: pointer;
+                text-align: center;
+                outline: none;
+            }
+
+            .container input
+            {
+                height: 40px;
+                width: 19.0625em;
+                position: absolute;
+                margin: 0 auto;
+                font-size: 15px;
+                padding: 0 15px;
+                outline: none;
+                border: none;
+                border-radius: 10px;
+                background: #19202c;
+                box-shadow: inset 5px 5px 10px #141a23, inset -5px -5px 10px #1e2635;
+                color: #ffffff;
+            }
+
+            .container input::placeholder
+            {
+                color: #cccccc;
+            }
+
+            .theme_switch
+            {
+                position: fixed;
+                bottom: 25px;
+                right: 25px;
+                width: 50px;
+                height: 50px;
+                background: white;
+                border-radius: 10px;
+                text-align: center;
+            }
+
+            .theme_switch i
+            {
+                font-size: 25px;
+                line-height: 50px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 class="watermark">LOGO</h1>
+
+        <div class="container">
+            <p style="font-size: 30px; font-weight: bold;">Sign Up</p>
+
+            <input type="text" placeholder="Name" style="margin-top: 150px;" required>
+
+            <input type="email" placeholder="Username" style="margin-top: 205px;" required>
+            <input type="password" placeholder="Password" style="margin-top: 260px;" required>
+
+            <button class="active_button" style="margin-top: 355px;">Sign Up</button>
+            
+            <p style="position: absolute; margin-top: 410px; margin-bottom: 0px; margin-left: -20em; font-size: 12px;">Existing User?</p>
+            <button class="sec_button" style="margin-top: 430px;">Sign In</button>
+        </div>
+
+        <div class="theme_switch"><i class="material-icons-outlined">wb_sunny</i></div>
+    </body>
+</html>

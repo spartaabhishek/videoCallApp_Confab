@@ -120,18 +120,23 @@ async function start(pc) {
 //pc.onaddstream = (track) => {
   // don't set srcObject again if it is already set.
 
-  function handleTrack(pc){
+  function handleTrack(pc,user){
   pc.addEventListener('track', async (event) => {
-  var remoteStream=new MediaStream()
-  remoteStream.addTrack(event.track, remoteStream);
-
+    var remoteStream=new MediaStream()
+    remoteStream.addTrack(event.track, remoteStream);
+  if(document.getElementById(""+user)==null){
   var newVideo=document.createElement("video")
   newVideo.setAttribute("autoplay","true")
   newVideo.setAttribute("playinline","true")
   newVideo.className="remoteVideoConnected"
+  newVideo.id=`${user}`
   newVideo.srcObject = remoteStream
   document.getElementById("video-grid").appendChild(newVideo)
-  return newVideo
+  //return document.querySelector(`.remoteVideoConnected #${user}`)
+  }
+  else{
+    document.getElementById(""+user).srcObject=remoteStream
+  }
 })}
 
 
@@ -162,6 +167,20 @@ function handleCandidate(pc){
 // };
 
 // let the "negotiationneeded" event trigger offer generation
+let localCam = document.getElementById('camera')
+localCam.onclick = function(){
+  let mediaStream = document.getElementById('local-video').srcObject
+  mediaStream.getVideoTracks()[0].enabled =
+   !(mediaStream.getVideoTracks()[0].enabled);
+}
+
+let localMic = document.getElementById('mic')
+localMic.onclick = function(){
+  let mediaStream = document.getElementById('local-video').srcObject
+  mediaStream.getAudioTracks()[0].enabled =
+   !(mediaStream.getAudioTracks()[0].enabled);
+}
+
 let callBtn=document.getElementById("connect")
 callBtn.addEventListener("click", async () => {
   
@@ -230,12 +249,12 @@ signaling.addEventListener('message',async (msg) => {
         console.log(roomUsers)
         for(let i=0;i<roomUsers.length;i++){
            let user=roomUsers[i]
-          if(!peers.hasOwnProperty(user) && user!=userId){
+          if(peers.hasOwnProperty(user)==false && user!=userId){
              peers[user]={}
              peers[user].con = new RTCPeerConnection(config)
              peers[user].track = "none"
              await handleCandidate(peers[user]["con"])
-             peers[user]["stream"]=await handleTrack(peers[user]["con"])
+             await handleTrack(peers[user]["con"],user)
              await start(peers[user]["con"])
           }
           else if(user==userId && roomUsers.length==1) await start("")
@@ -273,9 +292,9 @@ signaling.addEventListener('message',async (msg) => {
 
       else if (data.type === 'disconnect'){
         if(peers.hasOwnProperty(data.userId)){
-          if(peers[data.userId].hasOwnProperty("stream")){
-            document.getElementById('video-grid').removeChild(peers[data.userId]["stream"])
-          }
+          var parent = document.getElementById('video-grid')
+          var node =document.getElementById(""+data.userId) 
+          parent.removeChild(node)
           peers[data.userId]["con"].close()
           delete peers[data.userId]
         }

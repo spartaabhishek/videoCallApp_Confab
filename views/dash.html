@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Login</title>
+        
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined" rel="stylesheet">
+
+        <style>
+            body
+            {
+                font-family: 'Open Sans', sans-serif;
+                background: #19202c;
+            }
+
+            .watermark
+            {
+                color: #1e2635;
+                transform: rotate(90deg);
+                user-select: none;
+                position: fixed;
+                margin: 50px 0px 0px -1em;
+            }
+
+            .header
+            {
+                width: 100%;
+                height: 100px;
+                position: absolute;
+                left: 0;
+                top: 0;
+                color: white;
+            }
+
+            .header h1
+            {
+                padding: 0px 20px;
+                font-weight: bold;
+                float: left;
+            }
+            
+            .header ul
+            {
+                padding-right: 10px;
+            }
+
+            .header li
+            {
+                list-style-type: none;
+                float: right;
+                font-size: 25px;
+                padding: 10px;
+            }
+
+            .profile_img
+            {
+                width: 55px;
+                border-radius: 50%;
+                margin-top: -15px;
+                border: 5px solid #1b222f;
+                box-shadow:  5px 5px 15px #131821, -5px -5px 15px #1f2837;
+                cursor: pointer;
+            }
+
+            .profile_menu
+            {
+                width: 165px;
+                height: 125px;
+                position: absolute;
+                right: 25px;
+                top: 100px;
+                background: white;
+                border-radius: 10px;
+                color: black;
+            }
+
+            .arrow-up
+            {
+                width: 0; 
+                height: 0; 
+                border-left: 10px solid transparent;
+                border-right: 10px solid transparent;
+                border-bottom: 10px solid white;
+                position: absolute;
+                right: 15px;
+                top: -10px;
+            }
+
+            .profile_menu li
+            {
+                float: unset;
+                text-align: center;
+                padding: 5px;
+            }
+
+            .profile_menu ul
+            {
+                padding: unset;
+            }
+
+            .container
+            {
+                position: relative;
+                margin-top: 200px;
+                text-align: center;
+                color: #fff;
+            }
+
+            .active_button
+            {
+                height: 60px;
+                width: 200px;
+                border: none;
+                border-radius: 10px;
+                background: linear-gradient(145deg, #1b222f, #171d28);
+                box-shadow:  5px 5px 10px #141a23, -5px -5px 10px #1e2635;
+                color: #3bd0ea;
+                font-size: 15px;
+                font-weight: bold;
+                cursor: pointer;
+                outline: none;
+            }
+
+            .sec_button
+            {
+                height: 60px;
+                width: 450px;
+                border: none;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0);
+                border: 3px solid #1e2635;
+                color: #cccccc;
+                font-size: 15px;
+                font-weight: bold;
+                cursor: pointer;
+                outline: none;
+            }
+
+            .text_box
+            {
+                height: 60px;
+                width: 210px;
+                font-size: 15px;
+                outline: none;
+                border: none;
+                border-radius: 5px;
+                background: #19202c;
+                box-shadow: inset 5px 5px 10px #141a23, inset -5px -5px 10px #1e2635;
+                color: #ffffff;
+                text-align: center;
+            }
+
+            .text_box::placeholder
+            {
+                color: #cccccc;
+            }
+
+            .theme_switch
+            {
+                position: fixed;
+                bottom: 25px;
+                right: 25px;
+                width: 50px;
+                height: 50px;
+                background: white;
+                border-radius: 10px;
+                text-align: center;
+            }
+
+            .theme_switch i
+            {
+                font-size: 25px;
+                line-height: 50px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 class="watermark" style="font-size: 10em;"></h1>
+
+        <div class="container">
+            <h1 style="margin-bottom: 40px;">Join or Create a New Meeting</h1>
+
+            <button id="join_meet" class="active_button" style="margin-right: 30px;">Join Meeting</button>
+            <input  id="rid" class="text_box" type="text" placeholder="Meeting Code">
+
+            <br><br>
+
+            <button id="enter_room" class="sec_button" style="">Create Meeting</button>
+        </div>
+
+        <div class="header">
+            <h1>LOGO</h1>
+            <ul>
+                <li onclick="profile_menu()"><img class="profile_img" src="https://pbs.twimg.com/profile_images/701426410863243264/phe5bian.png"></li>
+                <li>User</li>
+            </ul>
+            <div class="profile_menu" style="display: none;">
+                <div class="arrow-up"></div>
+                <ul>
+                    <li>Profile</li>
+                    <li>Sign Out</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="theme_switch"><i class="material-icons-outlined">wb_sunny</i></div>
+
+        <script>
+            function profile_menu()
+            {
+                var menu = document.getElementsByClassName("profile_menu");
+                if (menu[0].style.display === "none") {
+                    menu[0].style.display = "block";
+                } else {
+                    menu[0].style.display = "none";
+                }
+            }
+            document.getElementById('enter_room').addEventListener('click',()=>{
+                const rid = document.getElementById('rid').value
+                if(rid!=""){
+                    window.location.href = window.location.origin+"/checkRoomId?roomId="+rid
+                }
+            })
+
+            document.getElementById('join_meet').addEventListener('click',()=>{
+                window.location.href = window.location.origin+"/generateRoomId"
+            })
+        </script>
+    </body>
+</html>
