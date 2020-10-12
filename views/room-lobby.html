@@ -187,7 +187,18 @@
     
     <script src="views/script.js"></script>
     <script>
-       const mailbtn = document.getElementById("mail");
+
+      const mic = document.getElementById("mic");
+      mic.addEventListener('click',()=>{
+        mic.firstChild.innerHTML = mic.firstChild.innerHTML=='mic'?'mic_off':'mic'
+      })
+
+      const vid = document.getElementById("camera");
+      vid.addEventListener('click',()=>{
+        vid.firstChild.innerHTML = vid.firstChild.innerHTML=='videocam'?'videocam_off':'videocam'
+      })
+     
+      const mailbtn = document.getElementById("mail");
        mailbtn.addEventListener('click',()=>{
         window.open(`http://localhost:80/VideoCallMail/sendMail.php?url=${window.location.href}`, '_blank');
        });

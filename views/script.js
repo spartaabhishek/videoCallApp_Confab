@@ -1,71 +1,64 @@
-// "use strict";
-
-// const mediaStreamConstraints = {
-//   video: true,
-//   audio: false,
-// };
-
-// const localVideo = document.querySelector("video");
-
-// let localStream;
-
-// function gotLocalMediaStream(mediaStream) {
-//   localStream = mediaStream;
-//   localVideo.srcObject = mediaStream;
-// }
-
-// function handleLocalMediaStreamError(error) {
-//   console.log("navigator.getUserMedia error: ", error);
-// }
-
-// navigator.mediaDevices
-//   .getUserMedia(mediaStreamConstraints)
-//   .then(gotLocalMediaStream)
-//   .catch(handleLocalMediaStreamError);
+/*
+  webrtc ->
+      1) get local video
+      2) connect peers using RTCPeerconnection
+      3) Send remote Video -> track
+*/
 
 
+/*
+  Flow ->
 
-// cope with browser differences
+  1) on-websocket-connect => start local video , get enterlobby , get users (RTC connection initialised)
+  2) on-click-event-to-connect => Send offer , set local description
+  3) on-answer-to-offer => set Remote desc
+  4) on-track-event => display track in Video element
+
+*/
+
+
+// logic for better audio , predefined audio class
 let audioContext;
 if (typeof AudioContext === 'function') {
   audioContext = new AudioContext();
 } else if (typeof webkitAudioContext === 'function') {
-  audioContext = new webkitAudioContext(); // eslint-disable-line new-cap
+  audioContext = new webkitAudioContext(); 
 } else {
   console.log('Sorry! Web Audio not supported.');
 }
-
-// create a filter node
 var filterNode = audioContext.createBiquadFilter();
-// see https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html#BiquadFilterNode-section
 filterNode.type = 'highpass';
-// cutoff frequency: for highpass, audio is attenuated below this frequency
 filterNode.frequency.value = 10000;
-
-// create a gain node (to change audio volume)
 var gainNode = audioContext.createGain();
-// default is 1 (no change); less than 1 means audio is attenuated
-// and vice versa
 gainNode.gain.value = 0.5;
 
 
 
 var url = location.origin.replace(/^http/, 'ws')
+
+// signalling - a medium to share info between two peers (clients)
 const signaling = new WebSocket(url);
+
+// incoming video constraints
 const constraints = {video: {
   width: { min: 640, max: 1024 },
   height: { min: 480, max: 768 },
   aspectRatio: { ideal: 1.7777777778 }
 },
 audio: true};
+
+
+
 var dataConstraint = null;
 var userId=""
 var roomId=window.location.href.substring(window.location.href.indexOf(location.origin)+window.location.origin.length+1)
 var roomUsers=[]
-// var configuration = { 
-//   "iceServers": [{ "url": "stun:stun.stunprotocol.org" }] 
-// };
 
+
+
+// ICE STUN server 
+// Used to bypass Network Address Translation
+// local ip -> public ip
 const config = {
   'iceServers': [
       { url: 'stun:stun1.l.google.com:19302' },
@@ -76,16 +69,21 @@ const config = {
       }
   ]
 }
-// const config = {'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]}
-//const pc = new RTCPeerConnection(config);
-//sendChannel = pc.createDataChannel("sendDataChannel", dataConstraint);
+
+
 const peers ={}
+
+
+// converts javascript object to JSON and sends to server
 async function send(message) { 
   console.log(message)
   await signaling.send(JSON.stringify(message)); 
 };
 
-//local video element
+
+
+// local video element 
+// by using getUserMedia function()
 async function start(pc) {
   try {
     // get local stream, show it in self-view and add it to be sent
@@ -114,10 +112,11 @@ async function start(pc) {
 }
 
 
-//pc.onaddstream = (track) => {
-  // don't set srcObject again if it is already set.
+// track event fired after offer/answer completion
+// adding remote video  
+function handleTrack(pc,user){
 
-  function handleTrack(pc,user){
+  // peers[user]["con"] == pc
   pc.addEventListener('track', async (event) => {
     var remoteStream=new MediaStream()
     remoteStream.addTrack(event.track, remoteStream);
@@ -129,7 +128,7 @@ async function start(pc) {
   newVideo.id=`${user}`
   newVideo.srcObject = remoteStream
   document.getElementById("video-grid").appendChild(newVideo)
-  //return document.querySelector(`.remoteVideoConnected #${user}`)
+
   }
   else{
     document.getElementById(""+user).srcObject=remoteStream
@@ -141,29 +140,23 @@ signaling.onopen =async (data) => {
   console.log("connected...");
   console.log(data);
 
+  // signal - is used to make a room (lobby)
   await send({type:"enterlobby",roomId})
+
+  // signal - a request for all concurrent users in current lobby
   await send({type:"users",roomId})
 
 };
 
+
+// function to share info about ICE stun servers
 function handleCandidate(pc){
   pc.onicecandidate = async ({ candidate }) =>{
     if(candidate!=null) await send({ type:"candidate",candidate,roomId,userId });
 }
 }
 
-// pc.onnegotiationneeded = async () => {
-//   try {
-
-//     await pc.setLocalDescription(await pc.createOffer());
-//     // send the offer to the other peer
-//     send({type:'offer',offer: pc.localDescription});
-//   } catch (err) {
-//     console.error(err);
-//   }
-// };
-
-// let the "negotiationneeded" event trigger offer generation
+// click event for local-video
 let localCam = document.getElementById('camera')
 localCam.onclick = function(){
   let mediaStream = document.getElementById('local-video').srcObject
@@ -171,6 +164,8 @@ localCam.onclick = function(){
    !(mediaStream.getVideoTracks()[0].enabled);
 }
 
+
+// click event for mic
 let localMic = document.getElementById('mic')
 localMic.onclick = function(){
   let mediaStream = document.getElementById('local-video').srcObject
@@ -178,19 +173,27 @@ localMic.onclick = function(){
    !(mediaStream.getAudioTracks()[0].enabled);
 }
 
+
+// click event for disconnect button
 let disconnectBtn = document.getElementById("disconnect")
 disconnectBtn.addEventListener('click',async () => {
   console.log('local disconnect signal')
   await send({type:'disconnect',userId,roomId})
-  window.location.href = window.location.origin
+  window.location.href = window.location.origin // "www.google.com/pics /images /video /youtube"
 })
 
+
+// Click event for Connect Button
+// It sends offer to all the connected users
 let callBtn=document.getElementById("connect")
 callBtn.addEventListener("click", async () => {
   
     console.log("clicked")
+    // just to make sure new users are also connected
     await send({type:"users",roomId})
+
     console.log(roomUsers)
+
     for(let i=0;i<roomUsers.length;i++){
       if(roomUsers[i]!=userId){
         handleOffer(roomUsers[i])
@@ -198,14 +201,19 @@ callBtn.addEventListener("click", async () => {
   } 
 })
 
+
+// function to set LocalDescription and Send Offer
 async function handleOffer(i){
   try{
-
+      // rtcpeerconnection -> remote desc and local desc
+      // offer -> initiating connection peers
+      // offer contains info about ip , video constraints and encryption 
       var offer = await peers[i]["con"].createOffer()
       if(peers[i]["con"].localDescription==null){
         await peers[i]["con"].setLocalDescription(new RTCSessionDescription (offer))
         console.log(`set local for ${i}`)
       }
+
       // send the offer to the other peer
       await send({ offer: new RTCSessionDescription(offer),type:'offer',roomId, userA : i ,userB:userId});
     }
@@ -214,40 +222,18 @@ async function handleOffer(i){
     }
   }
 
-// isOpen(signaling);
 
-
-//var selfView = document.getElementById("local-video");
-// once remote track media arrives, show it in remote video element
-
-
-// call start() to initiate
-
-
-
-
+// incoming messages from server (websocket)
 signaling.addEventListener('message',async (msg) => {
   var data = JSON.parse(msg.data);
   try {
 
-    // if(users){
-    //   if(users>0){
-    //   console.log("lobby requested")
-    //   await pc.setLocalDescription(await pc.createOffer());
-    //   // send the offer to the other peer
-    //   signaling.send({ desc: pc.localDescription });
-    //   }
-    //   else{
-    //     console.log("no lobby")
-    //   }
-    // }
-
-      // if we get an offer, we need to reply with an answer
-
+      // for userId
       if(data.type==="creds"){
          userId=data.userId
       }
 
+      // for All connected users
       else if(data.type==="users"){
         roomUsers=[...data.users]
         console.log(roomUsers)
@@ -266,6 +252,7 @@ signaling.addEventListener('message',async (msg) => {
         
       }
 
+      // Respoing to an incoming offer with an answer
       else if(data.type === "offer") {
 
         await peers[data.userB]["con"].setRemoteDescription(new RTCSessionDescription(data.offer));
@@ -279,7 +266,11 @@ signaling.addEventListener('message',async (msg) => {
         console.log("offer signal")
         console.log(data.offer)
         //sendChannel.send(selfView.value);
-      } else if (data.type === "answer") {
+      } 
+      
+      
+      // Handling Incoming answer to Our Offer
+      else if (data.type === "answer") {
         console.log("answer")
         
         await peers[data.userB]["con"].setRemoteDescription(await new RTCSessionDescription(data.answer));
@@ -287,6 +278,8 @@ signaling.addEventListener('message',async (msg) => {
         console.log(data.answer)
         
       } 
+
+    // STUN share Info
      else if (data.type==="candidate") {
         peers[data.userId]["con"].addIceCandidate(new RTCIceCandidate(data.candidate));
         console.log("candidate signal")
@@ -294,6 +287,7 @@ signaling.addEventListener('message',async (msg) => {
         
       }
 
+      // Handling Disconnected Users in A room
       else if (data.type === 'disconnect'){
         if(peers.hasOwnProperty(data.userId)){
           var parent = document.getElementById('video-grid')
@@ -311,28 +305,6 @@ signaling.addEventListener('message',async (msg) => {
 )
 
 
-// const localConnection = new RTCPeerConnection(servers);
-// const remoteConnection = new RTCPeerConnection(servers);
-// const sendChannel =
-//   localConnection.createDataChannel('sendDataChannel');
-
-// ...
-
-// remoteConnection.ondatachannel = (event) => {
-//   receiveChannel = event.channel;
-//   receiveChannel.onmessage = onReceiveMessage;
-//   receiveChannel.onopen = onReceiveChannelStateChange;
-//   receiveChannel.onclose = onReceiveChannelStateChange;
-// };
-
-// function onReceiveMessage(event) {
-//   document.querySelector("textarea#send").value = event.data;
-// }
-
-// document.querySelector("button#send").onclick = () => {
-//   var data = document.querySelector("textarea#send").value;
-//   sendChannel.send(data);
-// };
 
 
 

@@ -208,7 +208,21 @@ function send(con,message) {
 const ws = new WebSocket.Server({ server });
 var i=1;
 
+/* 
+  var rooms ={}
 
+  rooms = {
+      roomId1 : {
+        userId1 : connection1 ,
+        userId2 : connection2 ,
+      },
+      roomId2 : {
+        userId1 : connection1 ,
+        userId2 : connection2 
+      }
+  }
+
+*/
 
 ws.on("connection", function connection(conn) {
   console.log("client connected")
