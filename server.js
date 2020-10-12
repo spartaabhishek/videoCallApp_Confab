@@ -14,11 +14,18 @@ var bodyParser = require('body-parser')
 
 
 var connection = mysql.createConnection({
-  host:"localhost",
-  user:"root",
-  password:"naman007",
-  database:"confab"
+  host:"sql12.freemysqlhosting.net",
+  user:"sql12370244",
+  password:"aW53EBF6ib",
+  database:"sql12370244"
 })
+
+// var connection = mysql.createConnection({
+//   host:"localhost",
+//   user:"root",
+//   password:"naman007",
+//   database:"confab"
+// })
 
 connection.connect((err)=>{
   if(err) throw err
