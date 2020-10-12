@@ -3,16 +3,111 @@ const express = require("express");
 const app = express();
 const WebSocket = require("ws");
 const ejs = require('ejs')
+const mysql = require('mysql')
+
+const jwt = require("jsonwebtoken")
+const passport = require('passport')
+const flash=require('connect-flash')
+const session=require('express-session')
+var bodyParser = require('body-parser')
+
+
+
+var connection = mysql.createConnection({
+  host:"localhost",
+  user:"root",
+  password:"naman007",
+  database:"confab"
+})
+
+connection.connect((err)=>{
+  if(err) throw err
+  console.log('connected!')
+})
+
 const server = http.createServer(app);
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
 app.set('view engine', 'ejs');
 app.set('views', './views');
 app.use(express.static(__dirname));
 
 
+const initializePassport = require('./passport_config.js')
+initializePassport(passport, async username=>
+	// getUserByUsername
+ await searchUser(username)
+,
+	// getUserById
+  async id=> await searchUser(id)
+)
+app.use(express.json())
+app.use(flash())
+app.use(session({
+	// key to encrpt
+	secret: 'secret',
+	// resave existing sesson id
+	resave: false,
+	// save empty session id
+	saveUninitialized: false
+}))
+
+app.use(passport.initialize())
+app.use(passport.session())
+
+
+
+function searchUser(username){
+  return new Promise((resolve,reject)=>{
+    connection.query(`SELECT * FROM login where userid='${username}'`,(err, results, fields) => {
+    if (err) resolve(null);
+    else {
+      return resolve(results[0])
+     }
+})})
+}
+
+
 var rooms = {} 
 
 app.get("/",checkNotAuth,(req,res)=>{
-  res.sendFile("/views/login.html")
+  res.redirect("/login")
+})
+
+app.get("/login",checkNotAuth,(req,res)=>{
+  res.sendFile("/views/login.html",{root:__dirname})
+})
+app.post('/login',passport.authenticate('local',{
+	successRedirect: '/dashboard',
+	failureRedirect: '/',
+	failureFlash: true
+}
+),(req,res)=>{
+	const user={name:username}
+	const accessToken=jwt.sign(user,process.env.ACCESS_TOKEN)
+	res.json({accessToken})
+})
+
+
+app.get("/signup",checkNotAuth,(req,res)=>{
+  res.sendFile("/views/signup.html",{root:__dirname})
+})
+
+app.post("/signup",(req,res)=>{
+  var data = req.body
+  values=[]
+  console.log(req.body)
+  values.push(data.name)
+  values.push(data.username)
+  values.push(data.password)
+  console.log(values)
+  var sql = "INSERT INTO login (name,userid,password) VALUES ?"
+
+  connection.query(sql,[[values]],(err,results)=>{
+      if(err) res.redirect('/signup')
+      console.log("user registered")
+      res.redirect('/')
+  })
 })
 
 app.get("/dashboard",checkAuth,(req, res) => {
@@ -31,7 +126,9 @@ app.get('/checkRoomId',checkAuth,(req,res)=>{
   if(rooms.hasOwnProperty(roomId)){
       res.redirect(`/${roomId}`)
   }
+  else{
   res.redirect(`/dashboard`)
+  }
 })
 
 app.get("/:roomId",checkAuth,(req, res) => {
@@ -47,21 +144,21 @@ app.get('/mail',(req,res)=>{
 })
 
 function checkAuth(req,res,next){
-  var authenticate = true
-
-  if(!authenticate){
-    res.redirect('/login')
-  }
-  next()
+  
+  if(req.isAuthenticated()){
+		console.log("Auth true")
+		next()
+	}
+	else{
+		res.redirect('/login')
+	}
 }
 
 function checkNotAuth(req,res,next){
-  var authenticate = true
-
-  if(!authenticate){
-    next()
-  }
-  res.redirect('/dashboard')
+  if(req.isAuthenticated()){
+		return res.redirect('/dashboard')
+	}
+	next()
 }
 
 function generateURL(){
@@ -160,6 +257,10 @@ ws.on("connection", function connection(conn) {
      }
     }
     
+    else if(data.type=='disconnect'){
+      console.log("received: disconnect")
+      broadcast(data.userId,data)
+    }
     else if(data.type='candidate'){
       console.log("received: candidate")
       console.log(data.userId)
@@ -182,7 +283,7 @@ setInterval(()=>{
 },2000)
 
 function broadcast(userId,message) {
-  var {roomId}=message
+  var {roomId,userId}=message
   Object.keys(rooms[roomId]).forEach((uid) => {
       if(userId=="" || userId!=uid) send(rooms[roomId][uid],message);
       

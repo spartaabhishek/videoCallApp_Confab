@@ -57,10 +57,7 @@ const constraints = {video: {
   height: { min: 480, max: 768 },
   aspectRatio: { ideal: 1.7777777778 }
 },
-audio: {
-  sampleSize: 16,
-  channelCount: 2
-}};
+audio: true};
 var dataConstraint = null;
 var userId=""
 var roomId=window.location.href.substring(window.location.href.indexOf(location.origin)+window.location.origin.length+1)
@@ -180,6 +177,13 @@ localMic.onclick = function(){
   mediaStream.getAudioTracks()[0].enabled =
    !(mediaStream.getAudioTracks()[0].enabled);
 }
+
+let disconnectBtn = document.getElementById("disconnect")
+disconnectBtn.addEventListener('click',async () => {
+  console.log('local disconnect signal')
+  await send({type:'disconnect',userId,roomId})
+  window.location.href = window.location.origin
+})
 
 let callBtn=document.getElementById("connect")
 callBtn.addEventListener("click", async () => {

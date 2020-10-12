@@ -119,16 +119,17 @@
 
         <div class="container">
             <p style="font-size: 30px; font-weight: bold;">Sign Up</p>
+            <form action='/signup' method='POST'>
+            <input type="text" name="name" placeholder="Name" style="margin-top: 150px;" required>
 
-            <input type="text" placeholder="Name" style="margin-top: 150px;" required>
+            <input type="email" name="username" placeholder="Username" style="margin-top: 205px;" required>
+            <input type="password" name="password" placeholder="Password" style="margin-top: 260px;" required>
 
-            <input type="email" placeholder="Username" style="margin-top: 205px;" required>
-            <input type="password" placeholder="Password" style="margin-top: 260px;" required>
-
-            <button class="active_button" style="margin-top: 355px;">Sign Up</button>
-            
+            <button type="submit" name="submit" class="active_button" style="margin-top: 355px;">Sign Up</button>
+            </form>
             <p style="position: absolute; margin-top: 410px; margin-bottom: 0px; margin-left: -20em; font-size: 12px;">Existing User?</p>
             <button class="sec_button" style="margin-top: 430px;">Sign In</button>
+            
         </div>
 
         <div class="theme_switch"><i class="material-icons-outlined">wb_sunny</i></div>

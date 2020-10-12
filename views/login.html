@@ -119,16 +119,22 @@
 
         <div class="container">
             <p style="font-size: 30px; font-weight: bold;">Sign In</p>
+            <form action='/login' method='post'>
+            <input type="email" name="username" placeholder="Username" style="margin-top: 150px;" required>
+            <input type="password" name="password" placeholder="Password" style="margin-top: 205px;" required>
 
-            <input type="email" placeholder="Username" style="margin-top: 150px;" required>
-            <input type="password" placeholder="Password" style="margin-top: 205px;" required>
-
-            <button class="active_button" style="margin-top: 300px;">Sign In</button>
-
+            <button type="submit" class="active_button" style="margin-top: 300px;">Sign In</button>
+            </form>
             <p style="position: absolute; margin-top: 355px; margin-bottom: 0px; margin-left: -21em; font-size: 12px;">New User?</p>
-            <button class="sec_button" style="margin-top: 375px;">Sign Up</button>
+            <button onclick="signup()" class="sec_button" style="margin-top: 375px;">Sign Up</button>
+            
         </div>
 
         <div class="theme_switch"><i class="material-icons-outlined">wb_sunny</i></div>
+        <script>
+            function signup(){
+                window.location.href = window.location.origin+"/signup"
+            }
+        </script>
     </body>
 </html>
