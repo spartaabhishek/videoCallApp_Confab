@@ -1,10 +1,7 @@
 const http = require("http");
 const express = require("express");
-const app = express();
-const WebSocket = require("ws");
 const ejs = require('ejs')
-const mysql = require('mysql')
-
+const initializePassport = require('./passport_config.js')
 const jwt = require("jsonwebtoken")
 const passport = require('passport')
 const flash=require('connect-flash')
@@ -12,42 +9,25 @@ const session=require('express-session')
 var bodyParser = require('body-parser')
 
 
+const app = express();
+const server = http.createServer(app);
+const WebSocket = require("ws");
 
-var connection = mysql.createConnection({
-  host:"sql12.freemysqlhosting.net",
-  user:"sql12370244",
-  password:"aW53EBF6ib",
-  database:"sql12370244"
-})
 
-// var connection = mysql.createConnection({
-//   host:"localhost",
-//   user:"root",
-//   password:"naman007",
-//   database:"confab"
-// })
-
+// database connection 
+// MySQL used here
+var connection = require('./db_creds')
 connection.connect((err)=>{
   if(err) throw err
   console.log('connected!')
 })
 
-const server = http.createServer(app);
+
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 app.set('view engine', 'ejs');
 app.set('views', './views');
 app.use(express.static(__dirname));
-
-
-const initializePassport = require('./passport_config.js')
-initializePassport(passport, async username=>
-	// getUserByUsername
- await searchUser(username)
-,
-	// getUserById
-  async id=> await searchUser(id)
-)
 app.use(express.json())
 app.use(flash())
 app.use(session({
@@ -63,7 +43,18 @@ app.use(passport.initialize())
 app.use(passport.session())
 
 
+// passport function call
+initializePassport(passport, async username=>
 
+	// getUserByUsername
+ await searchUser(username)
+,
+	// getUserById
+  async id=> await searchUser(id)
+)
+
+
+// query database
 function searchUser(username){
   return new Promise((resolve,reject)=>{
     connection.query(`SELECT * FROM login where userid='${username}'`,(err, results, fields) => {
@@ -74,8 +65,11 @@ function searchUser(username){
 })})
 }
 
-
+// Object which stores info about connected users
 var rooms = {} 
+
+
+// endpoints
 
 app.get("/",checkNotAuth,(req,res)=>{
   res.redirect("/login")
@@ -84,6 +78,7 @@ app.get("/",checkNotAuth,(req,res)=>{
 app.get("/login",checkNotAuth,(req,res)=>{
   res.sendFile("/views/login.html",{root:__dirname})
 })
+
 app.post('/login',passport.authenticate('local',{
 	successRedirect: '/dashboard',
 	failureRedirect: '/',
@@ -94,7 +89,6 @@ app.post('/login',passport.authenticate('local',{
 	const accessToken=jwt.sign(user,process.env.ACCESS_TOKEN)
 	res.json({accessToken})
 })
-
 
 app.get("/signup",checkNotAuth,(req,res)=>{
   res.sendFile("/views/signup.html",{root:__dirname})
@@ -209,6 +203,10 @@ const ws = new WebSocket.Server({ server });
 var i=1;
 
 /* 
+
+  structure of variable room
+
+
   var rooms ={}
 
   rooms = {

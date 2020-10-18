@@ -18,6 +18,7 @@
 
 
 // logic for better audio , predefined audio class
+
 let audioContext;
 if (typeof AudioContext === 'function') {
   audioContext = new AudioContext();
@@ -82,11 +83,11 @@ const peers ={}
 
 
 // converts javascript object to JSON and sends to server
+// JSON - stringified form of javascript object
 async function send(message) { 
   console.log(message)
   await signaling.send(JSON.stringify(message)); 
 };
-
 
 
 // local video element 
